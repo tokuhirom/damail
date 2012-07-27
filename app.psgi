@@ -16,6 +16,9 @@ use Email::MIME::Encodings;
 use Encode;
 use Log::Minimal;
 
+use Damail::JSONMaker::DataPage;
+use Damail::JSONMaker::NetIMAPClient;
+
 my $conf = pit_get('damail', require => {
     'server' => 'imap server',
     user => 'user',
@@ -30,14 +33,6 @@ my $imap = Net::IMAP::Client->new(
 $imap->login or die "Cannot login: " . $imap->last_error;
 my @folders = $imap->folders;
 $imap->select('INBOX');
-
-sub Data::Page::as_hashref {
-    my $self = shift;
-    +{
-        map { $_ => $self->$_ }
-        qw(total_entries next_page)
-    }
-}
 
 our $VERSION = '0.01';
 
@@ -111,61 +106,7 @@ get '/folder/messages.json' => sub {
     return $c->render_json(+{
         pager => $pager->as_hashref,
         messages => [
-            map {
-                my $seen;
-                for my $flag (@{$_->flags || []}) {
-                    $seen++ if uc($flag) eq '\\SEEN';
-                }
-                +{
-                    subject => $_->subject,
-                    seen => $seen ? JSON::true : JSON::false,
-                    from => [
-                        map {
-                            +{
-                                name => $_->name,
-                                email => $_->email,
-                            }
-                        }
-                        @{$_->from}
-                    ],
-                    to => [
-                        map {
-                            +{
-                                name => $_->name,
-                                email => $_->email,
-                            }
-                        }
-                        @{$_->to}
-                    ],
-                    date => $_->date,
-                    uid => $_->uid,
-                    message_id => $_->message_id,
-                    $_->parts ? (parts => [
-                        map {
-                            +{
-                                part_id => $_->part_id,
-                                subtype => $_->subtype,
-                                transfer_encoding => $_->transfer_encoding,
-                                parameters => $_->parameters,
-                                uid => $_->uid,
-                            }
-                        }
-                        @{$_->parts}
-                    ]) : (),
-                    $_->transfer_encoding ? (transfer_encoding => $_->transfer_encoding) : (),
-                    $_->subtype ? (subtype => $_->subtype) : (),
-                    $_->parameters ? (parameters => $_->parameters) : (),
-                    message_charset => do {
-                        my $charset = 'utf-8';
-                        if ($_->parts && ref($_->parts->[0]->parameters) eq 'HASH') {
-                            $charset = $_->parts->[0]->parameters->{charset};
-                        } elsif (ref $_->parameters eq 'HASH') {
-                            $charset = $_->parameters->{charset}
-                        }
-                        $charset;
-                    },
-                }
-            } reverse @$summary
+            map { $_->as_hashref } reverse @$summary
         ]
     });
 };

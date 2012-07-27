@@ -6,6 +6,38 @@ use File::Basename;
 use lib File::Spec->catdir(dirname(__FILE__), 'extlib', 'lib', 'perl5');
 use lib File::Spec->catdir(dirname(__FILE__), 'lib');
 use Amon2::Lite;
+use Net::IMAP::Client;
+use Encode::IMAPUTF7;
+use Encode;
+use Data::Page;
+use Config::Pit;
+use JSON;
+use Email::MIME::Encodings;
+use Encode;
+use Log::Minimal;
+
+my $conf = pit_get('damail', require => {
+    'server' => 'imap server',
+    user => 'user',
+    pass => 'pass',
+    ssl => 1,
+    port => 993,
+});
+
+my $imap = Net::IMAP::Client->new(
+    %$conf
+) or die "Cannot connect to IMAP server";
+$imap->login or die "Cannot login: " . $imap->last_error;
+my @folders = $imap->folders;
+$imap->select('INBOX');
+
+sub Data::Page::as_hashref {
+    my $self = shift;
+    +{
+        map { $_ => $self->$_ }
+        qw(total_entries next_page)
+    }
+}
 
 our $VERSION = '0.01';
 
@@ -29,44 +61,138 @@ get '/' => sub {
     return $c->render('index.tt');
 };
 
+get '/folders.json' => sub {
+    my $c = shift;
+    my @folders = $imap->folders;
+    my $all = $imap->status(\@folders);
+    my $res = $c->render_json({
+        folders => [
+            sort {
+                $a->{UIDVALIDITY} <=> $b->{UIDVALIDITY}
+            }
+            map {
+                my $h = $all->{$_};
+                $h->{origname} = $_;
+                $h->{name} = decode('IMAP-UTF-7', $_);
+                $h;
+            }
+            @folders
+        ],
+    });
+    return $res;
+};
+
+get '/folder/messages.json' => sub {
+    my $c = shift;
+    my $folder_name = $c->req->param('folder_name') // die;
+    infof("Trying to load folder: '%s'", $folder_name);
+    $imap->select($folder_name);
+    my $messages = $imap->search('ALL');
+    if (!$messages) {
+        croakf($imap->last_error);
+    }
+
+    my $page = 0+($c->req->param('page') || 1);
+    my $limit = 0+($c->req->param('limit') || 1);
+       $limit = 100 if $limit > 100;
+    my $pager = Data::Page->new();
+    $pager->total_entries(0+@$messages);
+    $pager->entries_per_page($limit);
+    $pager->current_page($page);
+
+    my @messages = $pager->splice([reverse @{$messages}]);
+    my $summary = $imap->get_summaries(\@messages, '');
+    unless ($summary) {
+        die $imap->last_error;
+    }
+ #  use Data::Dumper; warn Dumper([
+ #      reverse @$summary
+ #  ]->[1]);
+    return $c->render_json(+{
+        pager => $pager->as_hashref,
+        messages => [
+            map {
+                my $seen;
+                for my $flag (@{$_->flags || []}) {
+                    $seen++ if uc($flag) eq '\\SEEN';
+                }
+                +{
+                    subject => $_->subject,
+                    seen => $seen ? JSON::true : JSON::false,
+                    from => [
+                        map {
+                            +{
+                                name => $_->name,
+                                email => $_->email,
+                            }
+                        }
+                        @{$_->from}
+                    ],
+                    to => [
+                        map {
+                            +{
+                                name => $_->name,
+                                email => $_->email,
+                            }
+                        }
+                        @{$_->to}
+                    ],
+                    date => $_->date,
+                    uid => $_->uid,
+                    message_id => $_->message_id,
+                    $_->parts ? (parts => [
+                        map {
+                            +{
+                                part_id => $_->part_id,
+                                subtype => $_->subtype,
+                                transfer_encoding => $_->transfer_encoding,
+                                parameters => $_->parameters,
+                                uid => $_->uid,
+                            }
+                        }
+                        @{$_->parts}
+                    ]) : (),
+                    $_->transfer_encoding ? (transfer_encoding => $_->transfer_encoding) : (),
+                    $_->subtype ? (subtype => $_->subtype) : (),
+                    $_->parameters ? (parameters => $_->parameters) : (),
+                    message_charset => do {
+                        my $charset = 'utf-8';
+                        if ($_->parts && ref($_->parts->[0]->parameters) eq 'HASH') {
+                            $charset = $_->parts->[0]->parameters->{charset};
+                        } elsif (ref $_->parameters eq 'HASH') {
+                            $charset = $_->parameters->{charset}
+                        }
+                        $charset;
+                    },
+                }
+            } reverse @$summary
+        ]
+    });
+};
+
+get '/message/show.json' => sub {
+    my $c = shift;
+    my $message_uid = $c->req->param('message_uid') or die;
+    my $part_id = $c->req->param('part_id') || 1;
+    my $transfer_encoding = $c->req->param('transfer_encoding') or die;
+    my $message_charset = $c->req->param('message_charset') || 'utf-8';
+    my $body = $imap->get_part_body($message_uid, $part_id);
+       $body = $$body;
+    if ($transfer_encoding ne 'null') {
+       $body = Email::MIME::Encodings::decode($transfer_encoding, $body);
+    }
+       $body = decode($message_charset, $body);
+
+    return $c->render_json({
+        body => $body
+    });
+};
+
 # load plugins
 __PACKAGE__->load_plugin('Web::CSRFDefender');
-# __PACKAGE__->load_plugin('DBI');
-# __PACKAGE__->load_plugin('Web::FillInFormLite');
-# __PACKAGE__->load_plugin('Web::JSON');
+__PACKAGE__->load_plugin('Web::JSON');
 
 __PACKAGE__->enable_session();
 
 __PACKAGE__->to_app(handle_static => 1);
 
-__DATA__
-
-@@ index.tt
-<!doctype html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Damail</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js"></script>
-    <script type="text/javascript" src="[% uri_for('/static/js/main.js') %]"></script>
-    <link rel="stylesheet" href="http://twitter.github.com/bootstrap/1.4.0/bootstrap.min.css">
-    <link rel="stylesheet" href="[% uri_for('/static/css/main.css') %]">
-</head>
-<body>
-    <div class="container">
-        <header><h1>Damail</h1></header>
-        <section class="row">
-            This is a Damail
-        </section>
-        <footer>Powered by <a href="http://amon.64p.org/">Amon2::Lite</a></footer>
-    </div>
-</body>
-</html>
-
-@@ /static/js/main.js
-
-@@ /static/css/main.css
-footer {
-    text-align: right;
-}

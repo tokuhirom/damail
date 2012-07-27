@@ -1,0 +1,7 @@
+Damail
+======
+
+yet another IMAP4 web mail client for me.
+
+This MUA is only useful for me.
+

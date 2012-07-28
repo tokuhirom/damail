@@ -12,6 +12,12 @@
     <script type="text/javascript" src="[% uri_for('/static/js/micro_template.js') %]"></script>
     <script type="text/javascript" src="[% uri_for('/static/js/jquery.hotkeys.js') %]"></script>
     <style>
+        .clearfix {zoom:1;}
+        .clearfix:after{
+            content: ""; 
+            display: block; 
+            clear: both;}
+
         header {
             margin-bottom: 30px;
         }
@@ -25,9 +31,19 @@
             overflow: hidden;
             height: 15px;
             margin-bottom: 4px;
+            padding: 6px;
+            word-break: break-all;
         }
         .message.seen {
             background-color : #cccccc;
+        }
+        .message.focus {
+            border-left: blue 3px solid;
+        }
+        .messages .checkbox {
+            float: left;
+            display: block;
+            padding: 4px;
         }
         .messages .from {
             width: 200px;
@@ -42,11 +58,13 @@
         .messages .subject {
             float: left;
             min-width: 200px;
+            max-width: 530px;
             text-overflow: ellipsis;
             display: block;
             padding-left: 8px;
             pading-top: 9px;
             pading-bottom: 9px;
+            word-break: break-all;
         }
         .htmlMailIframe {
             border: #cccccc 1px solid;
@@ -102,7 +120,8 @@
     <script type="text/template" id="messagesTmpl">
         <div class="messages">
             <% messages.forEach(function (message) { %>
-                <div class="message clearfix <%= message.seen ? 'seen' : '' %>"  data-message_uid="<%= message.uid %>" data-transfer_encoding="<%= message.first_part.transfer_encoding %>" data-message_charset="<%= message.first_part.charset %>" data-subtype="<%= message.first_part.subtype %>">
+                <div class="message clearfix <%= message.seen ? 'seen' : '' %>"  id="message-<%= message.uid %>" data-message="<%= JSON.stringify(message) %>" data-message_uid="<%= message.uid %>" data-transfer_encoding="<%= message.first_part.transfer_encoding %>" data-message_charset="<%= message.first_part.charset %>" data-subtype="<%= message.first_part.subtype %>">
+                    <input type="checkbox" name="mailit" class="checkbox" />
                     <span class="from">
                         <% message.from.forEach(function (from) { %>
                             <% if (from.name) { %>

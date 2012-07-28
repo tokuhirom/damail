@@ -15,6 +15,11 @@ $(function () {
         }
     });
 
+    function TODO(msg) {
+        if (!msg) { msg = "Not implemented yet"; }
+        alert(msg);
+    }
+
     // model
     var IMAPClient = {
         getFolders: function () {
@@ -51,6 +56,7 @@ $(function () {
     var app = {
         box_limit: 50, // display messages in one page from folder.
         page: 1,
+        cursorMessage: null,
         lastFolder: null,
         messageDataCache: { },
         loadFolders: function () {
@@ -78,6 +84,7 @@ $(function () {
                 dat.messages.forEach(function (message) {
                     app.messageDataCache[message.uid] = message;
                 });
+                app.cursorDown();
             });
         },
         setupHooks: function () {
@@ -92,20 +99,33 @@ $(function () {
                     name: name
                 });
             });
-            $('.message').live('click', function () {
-                var message_uid = $(this).data('message_uid');
-                var transfer_encoding = $(this).data('transfer_encoding');
-                var message_charset = $(this).data('message_charset');
+            $('.message .from, .message .subject').live('click', function () {
+                var messageElem = $(this).parent();
+                var message_uid = messageElem.data('message_uid');
+                var transfer_encoding = messageElem.data('transfer_encoding');
+                var message_charset = messageElem.data('message_charset');
                 app.showLoading();
-                IMAPClient.showMessage(message_uid, transfer_encoding, message_charset).done(function (dat) {
-                    dat.message = app.messageDataCache[message_uid];
-                    var html = window.tmpl('messageTmpl', dat);
-                    $('#mainPane').html(html);
-                    app.hideLoading();
-                });
             });
+
+            // key bindings
             $(document).bind('keyup.u', function () {
                 app.upFolder();
+                return false;
+            });
+            $(document).bind('keydown.j', function () {
+                app.cursorDown();
+                return false;
+            });
+            $(document).bind('keydown.k', function () {
+                app.cursorUp();
+                return false;
+            });
+            $(document).bind('keyup.x', function () {
+                app.UISelectMessage();
+                return false;
+            });
+            $(document).bind('keyup.o', function () {
+                app.UIOpenMessage();
                 return false;
             });
 
@@ -121,12 +141,91 @@ $(function () {
         showLoading: function () {
             $('#loading').show();
         },
+        UIOpenMessage: function () {
+            var elem = $('#' + this.cursorMessage);
+            if (elem.size()) {
+                var message = elem.data('message');
+                app.showMessage(message);
+            }
+        },
+        showMessage: function (message) {
+            IMAPClient.showMessage(message.uid, message.first_part.transfer_encoding, message.first_part.charset).done(function (dat) {
+                dat.message = app.messageDataCache[message.uid];
+                var html = window.tmpl('messageTmpl', dat);
+                $('#mainPane').html(html);
+                app.hideLoading();
+                console.log('move to top');
+                $('html, body').animate({scrollTop: 0}, 'fast');
+            });
+        },
         upFolder: function () { // move up to last folder
             console.log('upfolder');
             if (app.lastFolder) {
                 app.showFolder(app.lastFolder);
             }
-        }
+        },
+        cursorUp: function () { // go to previous mail
+            console.log('cursorUp');
+            if (this.cursorMessage) {
+                var prevElem = $('#' + this.cursorMessage);
+                var elem = prevElem.prev();
+                if (elem.size()) {
+                    elem.addClass('focus');
+                    app.scrollToElem(elem);
+                    this.cursorMessage = elem.attr('id');
+                    prevElem.removeClass('focus');
+                } else {
+                    if (app.page == 1) {
+                        // no operation
+                    } else {
+                        TODO("Cannot go to next page, yet");
+                    }
+                }
+            } else {
+                // not selected any message
+                var elem = $('.message:first').addClass('focus');
+                this.cursorMessage = $(elem).attr('id');
+            }
+        },
+        cursorDown: function () { // goto next mail
+            console.log('cursorDown: ' + this.cursorMessage);
+            if (this.cursorMessage) {
+                var prevElem = $('#' + this.cursorMessage);
+                prevElem.removeClass('focus');
+                var elem = prevElem.next();
+                if (elem.size()) {
+                    elem.addClass('focus');
+                    app.scrollToElem(elem);
+                    this.cursorMessage = elem.attr('id');
+                } else {
+                    TODO("Cannot go to next page, yet");
+                }
+            } else {
+                // not selected any message
+                var elem = $('.message:first').addClass('focus');
+                this.cursorMessage = $(elem).attr('id');
+            }
+        },
+        scrollToElem: function (elem) {
+            var speed = 0;
+            var easing = undefined;
+            var top = $(elem).offset().top;
+            $("html:not(:animated),body:not(:animated)")
+                .stop()
+                .animate({ scrollTop: top }, speed, easing, function() {
+            });
+        },
+        UISelectMessage: function () {
+            console.log('select');
+            if (this.cursorMessage) {
+                var elem = $('#'+this.cursorMessage +' input');
+                if (elem.attr('checked')) {
+                    elem.removeAttr('checked');
+                } else {
+                    elem.attr('checked', 'checked');
+                }
+            }
+        },
     };
 
     // initialize

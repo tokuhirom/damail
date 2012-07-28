@@ -57,7 +57,11 @@ get '/folders.json' => sub {
     my $res = $c->render_json({
         folders => [
             sort {
-                $a->{UIDVALIDITY} <=> $b->{UIDVALIDITY}
+                sub {
+                    return -1 if $a->{name} eq 'INBOX';
+                    return  1 if $b->{name} eq 'INBOX';
+                    return ($a->{UIDVALIDITY} || 0) <=> ($b->{UIDVALIDITY}||0);
+                }->()
             }
             map {
                 my $h = $all->{$_};
@@ -78,7 +82,7 @@ get '/folder/messages.json' => sub {
     $imap->select($folder_name);
     my $messages = $imap->search('ALL');
     if (!$messages) {
-        croakf($imap->last_error);
+        croakf("[%s] %s", $folder_name, $imap->last_error);
     }
 
     my $page = 0+($c->req->param('page') || 1);

@@ -15,15 +15,19 @@ sub Net::IMAP::Client::MsgSummary::seen {
     return 0;
 }
 
-# take a message charset for first part.
-sub Net::IMAP::Client::MsgSummary::damail_message_charset {
-    my $charset = 'utf-8';
-    if (ref($_->parts) eq 'ARRAY' && ref($_->parts->[0]->parameters) eq 'HASH') {
-        $charset = $_->parts->[0]->parameters->{charset};
-    } elsif (ref $_->parameters eq 'HASH') {
-        $charset = $_->parameters->{charset}
+# take a message meta data for first part.
+sub Net::IMAP::Client::MsgSummary::damail_first_part {
+    my $self = shift;
+
+    if (ref($self->parts) eq 'ARRAY') {
+        return $self->parts->[0]->damail_first_part;
+    } else {
+        return +{
+            charset => $self->parameters ? $self->parameters->{charset} : 'utf-8',
+            subtype => $self->{subtype},
+            transfer_encoding => $self->{transfer_encoding},
+        };
     }
-    $charset;
 }
 
 sub Net::IMAP::Client::MsgSummary::as_hashref {
@@ -53,7 +57,7 @@ sub Net::IMAP::Client::MsgSummary::as_hashref {
             }
             @{$self->to || []}
         ],
-        message_charset => $self->damail_message_charset,
+        first_part => $self->damail_first_part,
     };
     if (ref($self->parts) eq 'ARRAY') {
         $h->{parts} = [

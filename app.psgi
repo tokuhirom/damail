@@ -42,13 +42,7 @@ sub load_config {
 
     my $mode = $c->mode_name || 'development';
 
-    +{
-        'DBI' => [
-            'dbi:SQLite:dbname=$mode.db',
-            '',
-            '',
-        ],
-    }
+    +{ }
 }
 
 get '/' => sub {

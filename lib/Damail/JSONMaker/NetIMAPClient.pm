@@ -11,6 +11,9 @@ use Time::HiRes qw(gettimeofday tv_interval);
 
 # $msgids is simple message_id or arrayref of messages_ids
 # There is no IMAP has no built in move command.
+# see:
+#   http://jarp.does.notwork.org/diary/200710c.html#200710291
+#   http://email.about.com/od/gmailtips/qt/use_gmail_imap.htm
 sub Net::IMAP::Client::damail_archive {
     my ($self, $msgids) = @_;
 

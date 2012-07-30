@@ -26,6 +26,7 @@
         }
         .folder {
             margin-bottom: 3px;
+            cursor: pointer;
         }
         .message {
             overflow: hidden;
@@ -41,6 +42,9 @@
         .message.focus {
             border-left: blue 3px solid;
         }
+        .messages {
+            border-top: #cccccc 1px solid;
+        }
         .messages .checkbox {
             float: left;
             display: block;
@@ -55,6 +59,7 @@
             pading-top: 9px;
             pading-bottom: 9px;
             padding-left: 6px;
+            cursor: pointer;
         }
         .message.selected {
             background-color: #FFC;
@@ -69,6 +74,7 @@
             pading-top: 9px;
             pading-bottom: 9px;
             word-break: break-all;
+            cursor: pointer;
         }
         .htmlMailIframe {
             border: #cccccc 1px solid;

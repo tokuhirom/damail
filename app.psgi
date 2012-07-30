@@ -83,9 +83,14 @@ get '/folder/messages.json' => sub {
     $pager->current_page($page);
 
     my @messages = $pager->splice([reverse @{$messages}]);
-    my $summary = $imap->get_summaries(\@messages, '');
-    unless ($summary) {
-        die $imap->last_error;
+    my $summary;
+    if (@messages) {
+        $summary = $imap->get_summaries(\@messages, '');
+        unless ($summary) {
+            die $imap->last_error;
+        }
+    } else {
+        $summary = [];
     }
     my $elapsed = tv_interval($t0, [gettimeofday]);
     infof("$elapsed seconds elapsed. Ready to response. Serialized it to JSON");

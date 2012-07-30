@@ -17,15 +17,19 @@ use Damail::JSONMaker::NetIMAPClient;
 
 sub create_client {
     my $conf = pit_get('damail', require => {
-        'server' => 'imap server',
-        user => 'user',
-        pass => 'pass',
-        ssl => 1,
-        port => 993,
+        'imap_server' => 'imap server',
+        imap_user => 'user',
+        imap_pass => 'pass',
+        imap_ssl => 1,
+        imap_port => 993,
     });
 
     my $imap = Net::IMAP::Client->new(
-        %$conf
+        server => $conf->{imap_server},
+        user => $conf->{imap_user},
+        pass => $conf->{imap_pass},
+        ssl => $conf->{imap_ssl},
+        port => $conf->{imap_port},
     ) or die "Cannot connect to IMAP server";
     $imap->login or die "Cannot login: " . $imap->last_error;
     my @folders = $imap->folders;

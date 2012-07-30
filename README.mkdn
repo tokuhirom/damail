@@ -5,3 +5,21 @@ yet another IMAP4 web mail client for me.
 
 This MUA is only useful for me.
 
+SMTP support
+------------
+
+This application does not support SMTP yet.
+
+I send mail in my day job on rare occasions.
+
+But, I want a feature to send e-mail. Patches welcome.
+
+Supported Browsers
+------------------
+
+I only tested Damail in stable version of Google Chrome on OSX.
+
+But you can send me a patch for other browsers.
+
+(I don't accept a patch for IE [6-8])
+

@@ -74,6 +74,8 @@ $(function () {
         currentMessage: null,
         lastFolder: null,
         messageDataCache: { },
+        prevMessage: {},
+        nextMessage: {},
         loadFolders: function () {
             IMAPClient.getFolders().success(function (dat) {
                 console.log(dat);
@@ -95,15 +97,30 @@ $(function () {
                 $('#mainPane').html(html);
 
                 app.hideLoading();
+                app.nextMessage = {};
+                app.prevMessage = {};
 
-                dat.messages.forEach(function (message) {
+                dat.messages.forEach(function (message, i) {
                     app.messageDataCache[message.uid] = message;
+                    if (i<dat.messages.length-1) {
+                        app.nextMessage[message.uid] = dat.messages[i+1];
+                    }
+                    if (i>=1) {
+                        app.prevMessage[message.uid] = dat.messages[i-1];
+                    }
                 });
                 app.cursorMessage = null;
-                app.cursorDown();
+                app.UICursorDown();
 
                 app.currentMessage = null;
             });
+        },
+        getNextMessage: function (message_uid) {
+        console.log(message_uid);
+            return app.nextMessage[message_uid];
+        },
+        getPrevMessage: function (message_uid) {
+            return app.prevMessage[message_uid];
         },
         setupHooks: function () {
             $('.folder').live('click', function (e) {
@@ -131,11 +148,11 @@ $(function () {
                 return false;
             });
             $(document).bind('keydown.j', function () {
-                app.cursorDown();
+                app.UICursorDown();
                 return false;
             });
             $(document).bind('keydown.k', function () {
-                app.cursorUp();
+                app.UICursorUp();
                 return false;
             });
             $(document).bind('keyup.r', function () {
@@ -241,46 +258,60 @@ $(function () {
                 app.showFolder(app.lastFolder);
             }
         },
-        cursorUp: function () { // go to previous mail
+        UICursorUp: function () { // go to previous mail
             console.log('cursorUp');
-            if (this.cursorMessage) {
-                var prevElem = $('#' + this.cursorMessage);
-                var elem = prevElem.prev();
-                if (elem.size()) {
-                    elem.addClass('focus');
-                    app.scrollToElem(elem);
-                    this.cursorMessage = elem.attr('id');
-                    prevElem.removeClass('focus');
+            if (app.isFolderView()) {
+                if (this.cursorMessage) {
+                    var prevElem = $('#' + this.cursorMessage);
+                    var elem = prevElem.prev();
+                    if (elem.size()) {
+                        elem.addClass('focus');
+                        app.scrollToElem(elem);
+                        this.cursorMessage = elem.attr('id');
+                        prevElem.removeClass('focus');
+                    } else {
+                        if (app.page == 1) {
+                            // no operation
+                        } else {
+                            TODO("Cannot go to next page, yet");
+                        }
+                    }
                 } else {
-                    if (app.page == 1) {
-                        // no operation
+                    // not selected any message
+                    var elem = $('.message:first').addClass('focus');
+                    this.cursorMessage = $(elem).attr('id');
+                }
+            } else if (app.isMessageView()) {
+                var prevMessage = app.getPrevMessage(this.currentMessage.uid);
+                if (prevMessage) {
+                    app.showMessage(prevMessage);
+                }
+            }
+        },
+        UICursorDown: function () { // goto next mail
+            console.log('cursorDown: ' + this.cursorMessage);
+            if (app.isFolderView()) {
+                if (this.cursorMessage) {
+                    var prevElem = $('#' + this.cursorMessage);
+                    prevElem.removeClass('focus');
+                    var elem = prevElem.next();
+                    if (elem.size()) {
+                        elem.addClass('focus');
+                        app.scrollToElem(elem);
+                        this.cursorMessage = elem.attr('id');
                     } else {
                         TODO("Cannot go to next page, yet");
                     }
-                }
-            } else {
-                // not selected any message
-                var elem = $('.message:first').addClass('focus');
-                this.cursorMessage = $(elem).attr('id');
-            }
-        },
-        cursorDown: function () { // goto next mail
-            console.log('cursorDown: ' + this.cursorMessage);
-            if (this.cursorMessage) {
-                var prevElem = $('#' + this.cursorMessage);
-                prevElem.removeClass('focus');
-                var elem = prevElem.next();
-                if (elem.size()) {
-                    elem.addClass('focus');
-                    app.scrollToElem(elem);
-                    this.cursorMessage = elem.attr('id');
                 } else {
-                    TODO("Cannot go to next page, yet");
+                    // not selected any message
+                    var elem = $('.message:first').addClass('focus');
+                    this.cursorMessage = $(elem).attr('id');
                 }
-            } else {
-                // not selected any message
-                var elem = $('.message:first').addClass('focus');
-                this.cursorMessage = $(elem).attr('id');
+            } else if (app.isMessageView()) {
+                var nextMessage = app.getNextMessage(this.currentMessage.uid);
+                if (nextMessage) {
+                    app.showMessage(nextMessage);
+                }
             }
         },
         scrollToElem: function (elem) {
@@ -298,8 +329,10 @@ $(function () {
                 var elem = $('#'+this.cursorMessage +' input');
                 if (elem.attr('checked')) {
                     elem.removeAttr('checked');
+                    elem.parents('.message').removeClass('selected');
                 } else {
                     elem.attr('checked', 'checked');
+                    elem.parents('.message').addClass('selected');
                 }
             }
         },

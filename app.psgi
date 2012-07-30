@@ -13,6 +13,7 @@ use JSON;
 use Email::MIME::Encodings;
 use Encode;
 use Log::Minimal;
+use Data::Dumper;
 use Time::HiRes qw(gettimeofday tv_interval);
 
 use Damail;
@@ -115,6 +116,24 @@ post '/message/show.json' => sub {
 
     return $c->render_json({
         body => $body
+    });
+};
+
+post '/message/archive.json' => sub {
+    my $c = shift;
+    my @message_uids = split(/,/, $c->req->param('message_uids'));
+    unless (@message_uids) {
+        die "Missing message_uids: " . Dumper($c->req);
+    }
+    # validation
+    for (@message_uids) {
+        $_ =~ /^[0-9]+$/ or die "Invalid message_uid: $_";
+    }
+
+    $imap->damail_archive(\@message_uids);
+
+    return $c->render_json({
+        message_uids => \@message_uids,
     });
 };
 

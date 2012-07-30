@@ -71,6 +71,7 @@ $(function () {
         box_limit: 50, // display messages in one page from folder.
         page: 1,
         cursorMessage: null,
+        currentMessage: null,
         lastFolder: null,
         messageDataCache: { },
         loadFolders: function () {
@@ -100,6 +101,8 @@ $(function () {
                 });
                 app.cursorMessage = null;
                 app.cursorDown();
+
+                app.currentMessage = null;
             });
         },
         setupHooks: function () {
@@ -135,12 +138,20 @@ $(function () {
                 app.cursorUp();
                 return false;
             });
-            $(document).bind('keyup.x', function () {
+            $(document).bind('keyup.r', function () {
+                app.UIReload();
+                return false;
+            });
+            $(document).bind('keydown.x', function () {
                 app.UISelectMessage();
                 return false;
             });
             $(document).bind('keyup.o', function () {
                 app.UIOpenMessage();
+                return false;
+            });
+            $(document).bind('keyup.e', function () {
+                app.UIArchive();
                 return false;
             });
 
@@ -149,6 +160,56 @@ $(function () {
                 top: '2px'
             });
             app.hideLoading();
+        },
+        UIArchive: function () {
+            if (app.isMessageView()) {
+                console.log('archiving');
+                app.showLoading();
+                IMAPClient.archiveMessage([app.currentMessage.uid]).done(function () {
+                    app.showFolder(app.lastFolder);
+                });
+            } else if (app.isFolderView()) {
+                console.log('archiving for folder view');
+                var uids = app.getSelectedMessageUIDs();
+                console.log(uids);
+                if (uids.length > 0) {
+                    app.showLoading();
+                    IMAPClient.archiveMessage(uids).done(function () {
+                        app.showFolder(app.lastFolder);
+                    });
+                }
+            } else {
+                // nop.
+            }
+        },
+        getSelectedMessages: function () {
+            var ret = [];
+            $('.messages input:checked').parents('.message').each(function (i, e) {
+                var msg = $(e).data('message');
+                ret.push(msg);
+            });
+            return ret;
+        },
+        getSelectedMessageUIDs: function () {
+            var ret = [];
+            app.getSelectedMessages().forEach(function (e, i) {
+                console.log(e);
+                ret.push(e.uid);
+            });
+            return ret;
+        },
+        isMessageView: function () {
+            // damail is displaying a one message?
+            return !!$('#message').size();
+        },
+        isFolderView: function () {
+            // damail is displaying message list in a folder?
+            return !!$('.messages').size();
+        },
+        UIReload: function() {
+            if (app.isFolderView() && app.lastFolder) {
+                app.showFolder(app.lastFolder);
+            }
         },
         hideLoading: function () {
             $('#loading').hide();
@@ -171,6 +232,7 @@ $(function () {
                 app.hideLoading();
                 console.log('move to top');
                 $('html, body').animate({scrollTop: 0}, 'fast');
+                app.currentMessage = dat.message;
             });
         },
         upFolder: function () { // move up to last folder
@@ -242,6 +304,7 @@ $(function () {
             }
         },
     };
+    window.app = app;
 
     // initialize
     app.setupHooks();

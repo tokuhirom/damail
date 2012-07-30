@@ -33,6 +33,7 @@
             margin-bottom: 4px;
             padding: 6px;
             word-break: break-all;
+            border-left: white 3px solid;
         }
         .message.seen {
             background-color : #cccccc;
@@ -79,12 +80,13 @@
         }
 
         #loading {
-            position: absolute;
+            position: fixed;
+            top: 0px;
             width: 200px;
             height: 16px;
             font-size: 10px;
             color: white;
-            background-color: gree;
+            background-color: green;
             padding: 2px;
         }
 
@@ -115,7 +117,7 @@
     <div id="loading">Loading...</div>
 
     <script type="text/template" id="foldersTmpl">
-        <% folders.filter(function (e) { return !!e.UIDVALIDITY; }).forEach(function (folder) { %>
+        <% folders.filter(function (e) { return e.hasOwnProperty('UIDVALIDITY'); }).forEach(function (folder) { %>
             <div class="folder" data-name="<%= folder.name %>" data-origname="<%= folder.origname %>"><%= folder.name %><span class="unseenCount <%= folder.UNSEEN ? 'nonEmpty' : 'empty' %>">(<%= folder.UNSEEN %>)</span></div>
         <% }); %>
     </script>
@@ -141,34 +143,34 @@
         </div>
     </script>
     <script type="text/template" id="messageTmpl">
-        <h2><%= message.subject %></h2>
-        <dl class="headers">
-            <dt>From</dt>
-            <dd>
-                <% message.from.forEach(function (from) { %>
-                    <% if (from.name) { %>
-                        "<%= from.name %>"
-                    <% } %>
-                    &lt; <%= from.email %>&gt;
-                <% }); %>
-            </dd>
-            <dt>To</dt>
-            <dd>
-                <% message.to.forEach(function (to) { %>
-                    <% if (to.name) { %>
-                        "<%= to.name %>"
-                    <% } %>
-                    &lt; <%= to.email %>&gt;
-                <% }); %>
-            </dd>
-        </dl>
-        <% if (message.first_part.subtype == 'html') { %>
-            <iframe src="data:text/html;charset=utf-8,<%= encodeURIComponent('<base href="http://example.com/" target="_blank">' + body) %>" width="100%" height="700" class="htmlMailIframe" frameborder="0"></iframe>
-        <% } else { %>
-            <pre><%= body %></pre>
-        <% } %>
-        <!-- <%= JSON.stringify(message) %> -->
-        <% window.currentMessage = message; %>
+        <div id="message">
+            <h2><%= message.subject %></h2>
+            <dl class="headers">
+                <dt>From</dt>
+                <dd>
+                    <% message.from.forEach(function (from) { %>
+                        <% if (from.name) { %>
+                            "<%= from.name %>"
+                        <% } %>
+                        &lt; <%= from.email %>&gt;
+                    <% }); %>
+                </dd>
+                <dt>To</dt>
+                <dd>
+                    <% message.to.forEach(function (to) { %>
+                        <% if (to.name) { %>
+                            "<%= to.name %>"
+                        <% } %>
+                        &lt; <%= to.email %>&gt;
+                    <% }); %>
+                </dd>
+            </dl>
+            <% if (message.first_part.subtype == 'html') { %>
+                <iframe src="data:text/html;charset=utf-8,<%= encodeURIComponent('<base href="http://example.com/" target="_blank">' + body) %>" width="100%" height="700" class="htmlMailIframe" frameborder="0"></iframe>
+            <% } else { %>
+                <pre><%= body %></pre>
+            <% } %>
+        </div>
     </script>
 </body>
 </html>

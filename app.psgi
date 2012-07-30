@@ -6,8 +6,6 @@ use File::Basename;
 use lib File::Spec->catdir(dirname(__FILE__), 'extlib', 'lib', 'perl5');
 use lib File::Spec->catdir(dirname(__FILE__), 'lib');
 use Amon2::Lite;
-use Net::IMAP::Client;
-use Encode::IMAPUTF7;
 use Encode;
 use Data::Page;
 use Config::Pit;
@@ -15,24 +13,11 @@ use JSON;
 use Email::MIME::Encodings;
 use Encode;
 use Log::Minimal;
+use Time::HiRes qw(gettimeofday tv_interval);
 
-use Damail::JSONMaker::DataPage;
-use Damail::JSONMaker::NetIMAPClient;
+use Damail;
 
-my $conf = pit_get('damail', require => {
-    'server' => 'imap server',
-    user => 'user',
-    pass => 'pass',
-    ssl => 1,
-    port => 993,
-});
-
-my $imap = Net::IMAP::Client->new(
-    %$conf
-) or die "Cannot connect to IMAP server";
-$imap->login or die "Cannot login: " . $imap->last_error;
-my @folders = $imap->folders;
-$imap->select('INBOX');
+my $imap = Damail->create_client();
 
 our $VERSION = '0.01';
 
@@ -78,7 +63,10 @@ get '/folders.json' => sub {
 get '/folder/messages.json' => sub {
     my $c = shift;
     my $folder_name = $c->req->param('folder_name') // die;
+
     infof("Trying to load folder: '%s'", $folder_name);
+    my $t0 = [gettimeofday];
+
     $imap->select($folder_name);
     my $messages = $imap->search('ALL');
     if (!$messages) {
@@ -98,6 +86,8 @@ get '/folder/messages.json' => sub {
     unless ($summary) {
         die $imap->last_error;
     }
+    my $elapsed = tv_interval($t0, [gettimeofday]);
+    infof("$elapsed seconds elapsed. Ready to response. Serialized it to JSON");
  #  use Data::Dumper; warn Dumper([
  #      reverse @$summary
  #  ]->[1]);
@@ -109,7 +99,8 @@ get '/folder/messages.json' => sub {
     });
 };
 
-get '/message/show.json' => sub {
+# this method rewrites '\\Seen' flag. so  it should be POST.
+post '/message/show.json' => sub {
     my $c = shift;
     my $message_uid = $c->req->param('message_uid') or die;
     my $part_id = $c->req->param('part_id') || 1;

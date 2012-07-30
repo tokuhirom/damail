@@ -20,6 +20,8 @@ $(function () {
         alert(msg);
     }
 
+    var csrf_token = $(document.body).data('csrf_token');
+
     // model
     var IMAPClient = {
         getFolders: function () {
@@ -41,15 +43,27 @@ $(function () {
         },
         showMessage: function (message_uid, transfer_encoding, message_charset) {
             return $.ajax({
-                type: 'get',
+                type: 'post',
                 url: '/message/show.json',
                 data: {
+                    csrf_token: csrf_token,
                     transfer_encoding: transfer_encoding,
                     message_charset: message_charset,
                     message_uid: message_uid
                 }
             });
         },
+        // @args message_uids: An array of message_uids.
+        archiveMessage: function (message_uids) {
+            return $.ajax({
+                type: 'post',
+                url: '/message/archive.json',
+                data: {
+                    csrf_token: csrf_token,
+                    message_uids: message_uids.join(',')
+                }
+            });
+        }
     };
 
     // controller
@@ -84,6 +98,7 @@ $(function () {
                 dat.messages.forEach(function (message) {
                     app.messageDataCache[message.uid] = message;
                 });
+                app.cursorMessage = null;
                 app.cursorDown();
             });
         },
@@ -212,7 +227,7 @@ $(function () {
             var top = $(elem).offset().top;
             $("html:not(:animated),body:not(:animated)")
                 .stop()
-                .animate({ scrollTop: top }, speed, easing, function() {
+                .animate({ scrollTop: top-50 }, speed, easing, function() {
             });
         },
         UISelectMessage: function () {

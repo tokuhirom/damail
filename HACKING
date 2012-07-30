@@ -1,0 +1,4 @@
+- IMAP has no built in move command
+
+> IMAP has no built in move command, when you move a message you actually copy it to another folder and then delete the original. We can easily copy any number of messages using the COPY message [destination] format. Here I copy both messages from the INBOX (that I already have selected) to INBOX.test2 folder, after that I select INBOX.test2 to confirm the messages are there. Note that after copying the RECENT flag is reset.
+

@@ -83,7 +83,9 @@
             width: 200px;
             height: 16px;
             font-size: 10px;
-            color: green;
+            color: white;
+            background-color: gree;
+            padding: 2px;
         }
 
         footer {
@@ -92,7 +94,7 @@
         }
     </style>
 </head>
-<body>
+<body data-csrf_token="[% c().get_csrf_defender_token() %]">
     <div class="container">
         <header><h1><a href="/">Damail</a></h1></header>
         <div class="row body">

@@ -5,6 +5,46 @@ use utf8;
 
 use JSON;
 use Net::IMAP::Client::MsgSummary;
+use Time::Piece;
+use Log::Minimal;
+
+# $msgids is simple message_id or arrayref of messages_ids
+# There is no IMAP has no built in move command.
+sub Net::IMAP::Client::damail_archive {
+    my ($self, $msgids) = @_;
+    my $archive_folder = $self->damail_find_or_create_archive_folder_name();
+    infof("Archiving %s to %s", ddf($msgids), $archive_folder);
+
+    infof('move messages from inbox to archive folder');
+    $self->select('INBOX');
+    $self->copy($msgids, $archive_folder)
+        or croakf("Cannot copy %s to %s: %s", ddf($msgids), ddf($archive_folder), $self->last_error);
+
+    infof('and remove it from INBOX');
+    $self->add_flags($msgids, '\\Deleted')
+        or croakf("Cannot add deleted flags to %s: %s", ddf($msgids), $self->last_error);
+    $self->expunge
+        or croakf("Cannot expunge: %s", $self->last_error);
+    infof('done to archive.');
+}
+
+sub Net::IMAP::Client::damail_find_or_create_archive_folder_name {
+    my $self = shift;
+
+    $self->{archive_folder_name} //= sub {
+        my @folders = $self->folders;
+        for (@folders) {
+            return $_ if $_ eq '[Gmail]/All Mail';
+        }
+
+        my $default_archive = 'Archive/' . Time::Piece->new()->year;
+        for (@folders) {
+            return $_ if $_ eq $default_archive;
+        }
+        $self->create_folder($default_archive);
+        return $default_archive;
+    }->();
+}
 
 sub Net::IMAP::Client::MsgSummary::seen {
     my $self = shift;

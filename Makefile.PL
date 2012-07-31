@@ -15,6 +15,8 @@ WriteMakefile(
 		'Config::Pit' => 0,
 		'Email::MIME::Encodings' => 0,
 		'Log::Minimal' => 0,
+		'Class::Method::Modifiers' => 0,
+		'Plack::Middleware::Log::Minimal' => 0,
 		Encode => 0,
     },
     MIN_PERL_VERSION => '5.008001',

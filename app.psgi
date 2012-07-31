@@ -148,6 +148,7 @@ __PACKAGE__->load_plugin('Web::JSON');
 
 __PACKAGE__->enable_session();
 __PACKAGE__->enable_middleware('AccessLog');
+__PACKAGE__->enable_middleware('Plack::Middleware::Log::Minimal');
 
 __PACKAGE__->to_app(handle_static => 1);
 

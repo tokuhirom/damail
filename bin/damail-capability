@@ -1,0 +1,8 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use Damail;
+use Data::Dumper;
+
+my $imap = Damail->create_client;
+print Dumper($imap->capability);

@@ -14,6 +14,13 @@ use Encode::IMAPUTF7;
 
 use Damail::JSONMaker::DataPage;
 use Damail::JSONMaker::NetIMAPClient;
+use Class::Method::Modifiers qw(install_modifier);
+
+use Log::Minimal;
+
+install_modifier('Net::IMAP::Client', 'before', '_socket_write', sub {
+    infof("[IMAP] %s", $_[1]);
+});
 
 sub create_client {
     my $conf = pit_get('damail', require => {

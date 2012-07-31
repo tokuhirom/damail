@@ -184,6 +184,7 @@ $(function () {
                 app.showLoading();
                 IMAPClient.archiveMessage([app.currentMessage.uid]).done(function () {
                     app.showFolder(app.lastFolder);
+                    app.loadFolders();
                 });
             } else if (app.isFolderView()) {
                 console.log('archiving for folder view');
@@ -193,6 +194,7 @@ $(function () {
                     app.showLoading();
                     IMAPClient.archiveMessage(uids).done(function () {
                         app.showFolder(app.lastFolder);
+                        app.loadFolders();
                     });
                 }
             } else {

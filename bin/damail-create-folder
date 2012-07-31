@@ -1,0 +1,11 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use utf8;
+use Damail;
+
+my $imap = Damail->create_client();
+for (@ARGV) {
+    $imap->create_folder($_)
+        or die $imap->last_error;
+}

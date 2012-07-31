@@ -77,15 +77,13 @@ $(function () {
         prevMessage: {},
         nextMessage: {},
         loadFolders: function () {
-            IMAPClient.getFolders().success(function (dat) {
+            var d = IMAPClient.getFolders();
+            d.success(function (dat) {
                 console.log(dat);
                 var html = window.tmpl('foldersTmpl', dat);
                 $('#foldersContainer').html(html);
-
-                if (dat.folders.length > 0) {
-                    app.showFolder(dat.folders[0]);
-                }
             });
+            return d;
         },
         showFolder: function (folder) {
             app.showLoading();
@@ -252,6 +250,7 @@ $(function () {
                 console.log('move to top');
                 $('html, body').animate({scrollTop: 0}, 'fast');
                 app.currentMessage = dat.message;
+                app.loadFolders();
             });
         },
         upFolder: function () { // move up to last folder
@@ -357,5 +356,9 @@ $(function () {
 
     // initialize
     app.setupHooks();
-    app.loadFolders();
+    app.loadFolders().done(function (dat) {
+        if (dat.folders.length > 0) {
+            app.showFolder(dat.folders[0]);
+        }
+    });
 });

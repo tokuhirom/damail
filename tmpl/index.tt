@@ -177,7 +177,7 @@
             <% if (message.first_part.subtype == 'html') { %>
                 <iframe src="data:text/html;charset=utf-8,<%= encodeURIComponent('<base href="http://example.com/" target="_blank">' + body) %>" width="100%" height="700" class="htmlMailIframe" frameborder="0"></iframe>
             <% } else { %>
-                <pre><%= body %></pre>
+                <pre><%== app.makeClickable(body) %></pre>
             <% } %>
         </div>
     </script>

@@ -21,7 +21,7 @@ $(function () {
     }
 
     var csrf_token = $(document.body).data('csrf_token');
-
+    
     // model
     var IMAPClient = {
         getFolders: function () {
@@ -336,6 +336,20 @@ $(function () {
                 }
             }
         },
+        makeClickable: function makeClickable(src) {
+            function escapeHTML(str) {
+                return str.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            }
+
+            return src.replace(/(https?:\/\/[^:/<>&]+(:\d+)?(\/[^#\s<>&()"']*(#([<>&"'()]+))?)?)|(.)/gi, function (r, link, part) {
+                if (link) {
+                    link = escapeHTML(link);
+                    return '<a target="_blank" href="' + link + '">' + link + '</a>';
+                } else {
+                    return escapeHTML(r);
+                }
+            });
+        }
     };
     window.app = app;
 

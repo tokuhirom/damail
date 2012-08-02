@@ -1,0 +1,19 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use utf8;
+use 5.010001;
+use autodie;
+use lib 'lib';
+
+use Damail;
+use Data::Dumper;
+
+my $mailbox = shift @ARGV || 'INBOX';
+
+my $imap = Damail->create_client();
+$imap->select($mailbox);
+for (qw(ALL UNSEEN ANSWERED DELETED)) {
+    say("$_: " . join(' ', @{$imap->search($_)}));
+}
+

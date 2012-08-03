@@ -1,0 +1,12 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use utf8;
+use Damail;
+
+@ARGV==3 or die;
+my ($folder, $uid, $id) = @ARGV;
+my $imap = Damail->create_client();
+$imap->select($folder);
+my $body = $imap->get_part_body($uid, $id);
+warn $$body;

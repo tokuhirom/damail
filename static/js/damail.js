@@ -41,7 +41,7 @@ $(function () {
                 }
             });
         },
-        showMessage: function (message_uid, transfer_encoding, message_charset) {
+        showMessage: function (message_uid, transfer_encoding, message_charset, folder_name) {
             return $.ajax({
                 type: 'post',
                 url: '/message/show.json',
@@ -49,7 +49,8 @@ $(function () {
                     csrf_token: csrf_token,
                     transfer_encoding: transfer_encoding,
                     message_charset: message_charset,
-                    message_uid: message_uid
+                    message_uid: message_uid,
+                    folder_name: folder_name
                 }
             });
         },
@@ -242,7 +243,7 @@ $(function () {
             }
         },
         showMessage: function (message) {
-            IMAPClient.showMessage(message.uid, message.first_part.transfer_encoding, message.first_part.charset).done(function (dat) {
+            IMAPClient.showMessage(message.uid, message.first_part.transfer_encoding, message.first_part.charset, this.lastFolder.name).done(function (dat) {
                 dat.message = app.messageDataCache[message.uid];
                 var html = window.tmpl('messageTmpl', dat);
                 $('#mainPane').html(html);
@@ -250,7 +251,7 @@ $(function () {
                 console.log('move to top');
                 $('html, body').animate({scrollTop: 0}, 'fast');
                 app.currentMessage = dat.message;
-                app.loadFolders();
+ //             app.loadFolders();
             });
         },
         upFolder: function () { // move up to last folder

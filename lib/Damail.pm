@@ -50,5 +50,27 @@ sub create_client {
     return $imap;
 }
 
+sub create_client_ae {
+    my $conf = pit_get(
+        'damail',
+        require => {
+            imap_server => 'imap server',
+            imap_user   => 'user',
+            imap_pass   => 'pass',
+            imap_ssl    => 1,
+            imap_port   => 993,
+        }
+    );
+
+    my $imap = AnyEvent::IMAP->new(
+        host   => $conf->{imap_server},
+        user   => $conf->{imap_user},
+        pass   => $conf->{imap_pass},
+        ssl    => $conf->{imap_ssl},
+        port   => $conf->{imap_port},
+    ) or die "Cannot connect to IMAP server";
+    return $imap;
+}
+
 1;
 

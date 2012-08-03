@@ -21,8 +21,8 @@ sub get_summary {
 
         if ($status->{MESSAGES} > 0) {
             imap->select($folder_name)->cb(sub {
-                my ($ok) = shift->recv;
-                infof("Selected.");
+                my ($ok, $err) = shift->recv;
+                infof("Selected. %s", ddf($err));
                 $ok or return $cv->send(0, "Cannot select $folder_name");
 
                 my $limit = min(50, $status->{MESSAGES});

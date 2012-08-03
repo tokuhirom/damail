@@ -30,7 +30,7 @@ my $load_cv = AE::cv();
 my $imap = Damail->create_client_ae();
 $imap->reg_cb(
     connect => sub {
-        infof("Trying to login");
+        infof("Connected. Trying to login");
         $imap->login()->cb(sub {
             my ($ok) = @_;
             $ok or die "Cannot logged in to the IMAP server.";
@@ -53,7 +53,7 @@ $imap->reg_cb(
 );
 
 # send ping
-my $timer = AE::timer(60, 20*60, sub {
+my $timer = AE::timer(60, 60, sub {
     infof("send ping");
     $imap->noop
 });

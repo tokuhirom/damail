@@ -30,12 +30,12 @@ $(function () {
                 url: '/folders.json'
             });
         },
-        listMessages: function (folder_name, limit, page) {
+        listMessages: function (folder_origname, limit, page) {
             return $.ajax({
                 type: 'get',
                 url: '/folder/messages.json',
                 data: {
-                    folder_name: folder_name,
+                    folder_name: folder_origname,
                     limit: limit,
                     page: page
                 }
@@ -89,7 +89,7 @@ $(function () {
         showFolder: function (folder) {
             app.showLoading();
             console.log(folder);
-            IMAPClient.listMessages(folder.name, this.box_limit, this.page).done(function (dat) {
+            IMAPClient.listMessages(folder.origname, this.box_limit, this.page).done(function (dat) {
                 app.lastFolder = folder;
                 console.log(dat);
                 var html = window.tmpl('messagesTmpl', dat);
@@ -243,7 +243,7 @@ $(function () {
             }
         },
         showMessage: function (message) {
-            IMAPClient.showMessage(message.uid, message.first_part.transfer_encoding, message.first_part.charset, this.lastFolder.name).done(function (dat) {
+            IMAPClient.showMessage(message.uid, message.first_part.transfer_encoding, message.first_part.charset, this.lastFolder.origname).done(function (dat) {
                 dat.message = app.messageDataCache[message.uid];
                 var html = window.tmpl('messageTmpl', dat);
                 $('#mainPane').html(html);

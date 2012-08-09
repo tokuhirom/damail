@@ -8,6 +8,16 @@ $(function () {
         };
     }
 
+    Date.prototype.damail_format_short = function () {
+        var now = new Date();
+        var thisStr = ''+this.getFullYear()+this.getMonth+this.getDate();
+        var nowStr = ''+now.getFullYear()+now.getMonth+now.getDate();
+        if (thisStr === nowStr) {
+            return sprintf("%02d:%02d", this.getHours(), this.getMinutes());
+        }
+        return sprintf("%d-%02d-%02d", this.getFullYear(), this.getMonth() + 1, this.getDate());
+    };
+
     $.ajaxSetup({
         error: function (err) {
             console.log(err);

@@ -125,11 +125,14 @@
 
     <div id="loading">Loading...</div>
 
+    <!-- left folders list -->
     <script type="text/template" id="foldersTmpl">
         <% folders.filter(function (e) { return e.hasOwnProperty('UIDVALIDITY'); }).forEach(function (folder) { %>
             <div class="folder" data-name="<%= folder.name %>" data-origname="<%= folder.origname %>"><%= folder.name %><span class="unseenCount <%= folder.UNSEEN ? 'nonEmpty' : 'empty' %>">(<%= folder.UNSEEN %>)</span></div>
         <% }); %>
     </script>
+
+    <!-- message list -->
     <script type="text/template" id="messagesTmpl">
         <div class="messages">
             <% messages.forEach(function (message) { %>
@@ -147,6 +150,7 @@
                         <% }); %>
                     </span>
                     <span class="subject"><%= message.subject %></span>
+                    <span class="date"><%= JSON.stringify(message)%></span>
                 </div>
             <% }); %>
         </div>

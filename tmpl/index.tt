@@ -11,6 +11,7 @@
     <script type="text/javascript" src="[% uri_for('/static/js/es5-shim.min.js') %]"></script>
     <script type="text/javascript" src="[% uri_for('/static/js/micro_template.js') %]"></script>
     <script type="text/javascript" src="[% uri_for('/static/js/jquery.hotkeys.js') %]"></script>
+    <script type="text/javascript" src="[% uri_for('/static/js/sprintf-0.7-beta1.js') %]"></script>
     <style>
         .clearfix {zoom:1;}
         .clearfix:after{
@@ -66,8 +67,7 @@
         }
         .messages .subject {
             float: left;
-            min-width: 200px;
-            max-width: 530px;
+            width: 430px;
             text-overflow: ellipsis;
             display: block;
             padding-left: 8px;
@@ -75,6 +75,10 @@
             pading-bottom: 9px;
             word-break: break-all;
             cursor: pointer;
+        }
+        .messages .date {
+            float: left;
+            width: 100px;
         }
         .htmlMailIframe {
             border: #cccccc 1px solid;
@@ -147,6 +151,7 @@
                         <% }); %>
                     </span>
                     <span class="subject"><%= message.subject %></span>
+                    <span class="date"><%= (new Date(message.date)).damail_format_short() %></span>
                 </div>
             <% }); %>
         </div>
